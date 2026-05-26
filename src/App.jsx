@@ -5,15 +5,16 @@ import TodoList from "./components/TodoList";
 import Layout, { LeftCol, RightCol } from "./components/Layout";
 import { useState } from "react";
 import TodoCreator from "./components/TodoCreator";
-import { v4 } from "uuid";
+import { v4 as uuid } from "uuid";
+import NoListView from "./components/NoListView";
 
 const defaultImage = "https://via.placeholder.com/32x32.png";
 
 // Lista menu
-const lists = [
-  { id: 1, name: "Importante", unone_count: 0 },
-  { id: 2, name: "Film da vedere", unone_count: 2 },
-  { id: 3, name: "Libri da leggere", unone_count: 0 },
+const initialList = [
+  { id: 1, name: "Importante", undone_count: 3 },
+  { id: 2, name: "Film da vedere", undone_count: 2 },
+  { id: 3, name: "Libri da leggere", undone_count: 3 },
 ];
 
 // Lista attiità suddivise su ogni funzione del menu
@@ -24,7 +25,6 @@ const initialTodos = [
 
   { listId: 2, id: 1, text: "Harry Potter", done: true },
   { listId: 2, id: 2, text: "I maghi del crimine", done: false },
-  { listId: 2, id: 3, text: "Naruto Shippuden", done: false },
 
   { listId: 3, id: 1, text: "React -  Guida completa", done: true },
   { listId: 3, id: 2, text: "Guida Completa", done: false },
@@ -41,25 +41,28 @@ function App() {
   // Definizione hook useState,  definisco e inizializzo i due stati
   const [listIdx, setListIdx] = useState(-1);
   const [todos, setTodos] = useState([]);
-  const [allTodos, setAllTodos] = useState(initialTodos)
+  const [allTodos, setAllTodos] = useState(initialTodos);
+  const [allList, setAllList] = useState(initialList);
 
   // Costante che contiene quali attività ci sono da fare in base alla voce del menu selezionata
   const selectListByIdx = (idx) => {
     setListIdx(idx);
-    setTodos(allTodos.filter((t) => t.listId === lists[idx].id));
+    setTodos(allTodos.filter((t) => t.listId === allList[idx].id));
   };
 
   const handleCreateTodo = (text) => {
     const newTodo = {
-      listId: lists[listIdx].id,
+      listId: allList[listIdx].id,
       id: uuid(),
       done: false,
       text: text,
-
     };
 
     setAllTodos([...allTodos, newTodo]);
-    setTodos(...todos, newTodo);
+    setTodos([...todos, newTodo]);
+    const tmpLists = [...allList];
+    tmpLists[listIdx].undone_count++;
+    setAllList(tmpLists);
   };
 
   return (
@@ -68,14 +71,20 @@ function App() {
         <User user={user} />
         <hr />
         <ListNames
-          lists={lists}
+          lists={allList}
           selectedListId={listIdx}
           onListClick={selectListByIdx}
         />
       </LeftCol>
       <RightCol>
-        <TodoList todos={todos} />
-        <TodoCreator createTodo={handleCreateTodo} />
+        {listIdx === -1 ? (
+          <NoListView />
+        ) : (
+          <>
+            <TodoList todos={todos} />
+            <TodoCreator onCreate={handleCreateTodo} />
+          </>
+        )}
       </RightCol>
     </Layout>
   );
